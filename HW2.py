@@ -13,6 +13,7 @@ class Process:
 		self.timeSlice = 0
 		self.burstTimeRemaining = cpuTime
 		self.IOTimeRemaining = IOTime
+		self.waitTime = 0
 
 	def __lt__(self,other):
 		return self.cpuTime < other.cpuTime
@@ -22,17 +23,26 @@ def SJF(processes):
 	doneProceeses = 0
 	processes.sort()
 	while doneProceeses !=cpuBound:
-		time+=1
-		#for p in processes:
-			#for core in upAction:
-				#if core != None
-					#core = p
 
-		doneProceeses +=1
+		for i in range(0,numcores):
+			if cores[i] == None:
+				cores[i]  = processes.pop(0)
+			else:
+				cores[i].burstTimeRemaining -=1
+			if cores[i].burstTimeRemaining ==0:
+				print "[time " + str(time) + "ms] Process ID " + str(cores[i].pNum)+" CPU burst done (turnaround time : "+str(time)+ "ms , total wait time "+ str(cores[i].waitTime)+"ms)"
+				cores[i] = None
+
+				doneProceeses+=1
+		for p in processes:
+			p.waitTime+=1
+		time+=1
+			
 
 
 def context(processA, processB,time):
-	print "[time " + str(time) + "ms] Context switch (swapping out Process " + str(processA.pNum) + " for Process " + str(processB.pNum) 
+	print "[time " + str(time) + "ms] Context switch (swapping out Process ID " + str(processA.pNum) + " for Process ID " + str(processB.pNum) +")"
+	
 		
 
 def RoundRobin(timeSlice):
@@ -79,6 +89,7 @@ def RoundRobin(timeSlice):
 					i-= 1
 				loop = False
 			time += 1
+
 
 
 if __name__ == '__main__':
