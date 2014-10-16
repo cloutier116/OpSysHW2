@@ -10,13 +10,40 @@ class Process:
 		self.priority = priority
 		self.core = 0
 		self.burstsRemaining = 8
+		self.timeSlice = 0
+		self.burstTimeRemaining = cpuTime
+
+	def __lt__(self,other):
+		return self.cpuTime < other.cpuTime
+
+def RoundRobin(timeSlice):
+		time = 0
+		loop = True
+		while loop:
+			for i in range(0,numCPUs):
+				if CPUs[i] == None:
+					CPUs[i] = readyQueue.pop(0)
+					CPUs[i].timeSlice = 0
+				else:
+					CPUs[i].timeSlice += 1
+					if CPUs[i].timeSlice >= timeSlice:
+						print "[time " + str(time) + "ms] Context switch (swapping out process ID " + str(CPUs[i].pNum) + " for process ID " + str(readyQueue[0].pNum) + ")"
+						readyQueue.append(CPUs[i])
+						CPUs[i] = readyQueue.pop(0)
+						loop = False
+			time += 1
 
 
+
+			#break
+		for CPU in CPUs:
+			print CPU.pNum
 
 if __name__ == '__main__':
 	n = 12
 	numCPUs = 4
 	processes = []
+	CPUs = [None, None, None, None]
 	time = 0
 	
 
@@ -35,5 +62,9 @@ if __name__ == '__main__':
 			print "[time " + str(time) + "ms] Interactive process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) +  " CPU time; priority " + str(p.priority) + ")"
 		else:
 			print "[time " + str(time) + "ms] CPU Bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + " CPU time; priority " + str(p.priority) + ")"
+	readyQueue.sort()
+
+	RoundRobin(100)
 
 
+	
