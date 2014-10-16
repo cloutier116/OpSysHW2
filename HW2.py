@@ -26,7 +26,7 @@ readyQueue = []
 for p in processes:
 	readyQueue.append(p)
 	if(p.interactive):
-		print "Interactive process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) +  " CPU time; priority " + str(p.priority) + ")"
+		print "[time " + str(time) + "ms] Interactive process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) +  " CPU time; priority " + str(p.priority) + ")"
 	else:
-		print "CPU Bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + " CPU time; priority " + str(p.priority) + ")"
+		print "[time " + str(time) + "ms] CPU Bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + " CPU time; priority " + str(p.priority) + ")"
 
