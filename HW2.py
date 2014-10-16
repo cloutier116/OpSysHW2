@@ -26,16 +26,20 @@ def SJF(processes):
 
 		for i in range(0,numcores):
 			if cores[i] == None:
+				print str(time) +"ms: added something to core "+ str(i)
 				cores[i]  = processes.pop(0)
+				continue
 			else:
 				cores[i].burstTimeRemaining -=1
-			if cores[i].burstTimeRemaining ==0:
-				print "[time " + str(time) + "ms] Process ID " + str(cores[i].pNum)+" CPU burst done (turnaround time : "+str(time)+ "ms , total wait time "+ str(cores[i].waitTime)+"ms)"
-				cores[i] = None
+				if cores[i].burstTimeRemaining ==0:
+					print "[time " + str(time) + "ms] Process ID " + str(cores[i].pNum)+" CPU burst done (turnaround time : "+str(time)+ "ms , total wait time "+ str(cores[i].waitTime)+"ms) Core " + str(i)+ " is now free"
+					cores[i] = None
 
-				doneProceeses+=1
+					doneProceeses+=1
 		for p in processes:
+			#print p.waitTime
 			p.waitTime+=1
+
 		time+=1
 			
 
@@ -123,6 +127,7 @@ if __name__ == '__main__':
 			print "[time " + str(time) + "ms] CPU Bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + " CPU time; priority " + str(p.priority) + ")"
 
 	RoundRobin(100, readyQueue)
+
 
 	readyQueue.sort()
 
