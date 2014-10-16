@@ -45,7 +45,7 @@ def context(processA, processB,time):
 	
 		
 
-def RoundRobin(timeSlice):
+def RoundRobin(timeSlice, readyQueue):
 		time = 0
 		loop = True
 		IOQueue = []
@@ -69,9 +69,9 @@ def RoundRobin(timeSlice):
 					if cores[i].burstTimeRemaining < 0:
 						switching[i] = 2
 						if(cores[i].interactive):
-							print "[time " + str(time) + "ms] " + "Interactive process ID " + str(cores[i].pNum) + " CPU burst done (turnaround time xms, total wait time xms)"
+							print "[time " + str(time) + "ms] " + "Interactive process ID " + str(cores[i].pNum) + " CPU burst done (turnaround time xms, total wait time " + str(cores[i].waitTime) + "ms)"
 						else:
-							print "[time " + str(time) + "ms] " + "Interactive process ID " + str(cores[i].pNum) + " CPU burst done (turnaround time xms, total wait time xms)"
+							print "[time " + str(time) + "ms] " + "Interactive process ID " + str(cores[i].pNum) + " CPU burst done (turnaround time xms, total wait time " + str(cores[i].waitTime) + "ms)"
 							cores[i].burstsRemaining -= 1
 
 						print "[time " + str(time) + "ms] Context switch (swapping out process ID " + str(cores[i].pNum) + " for process ID " + str(readyQueue[0].pNum) + ")"
@@ -88,6 +88,11 @@ def RoundRobin(timeSlice):
 					readyQueue.append(IOQueue.pop(i))
 					i-= 1
 				loop = False
+
+			for p in readyQueue:
+				p.waitTime+=1
+
+
 			time += 1
 
 
@@ -117,7 +122,7 @@ if __name__ == '__main__':
 		else:
 			print "[time " + str(time) + "ms] CPU Bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + " CPU time; priority " + str(p.priority) + ")"
 
-	RoundRobin(100)
+	RoundRobin(100, readyQueue)
 
 	readyQueue.sort()
 
