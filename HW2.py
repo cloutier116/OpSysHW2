@@ -14,6 +14,8 @@ class Process:
 		self.burstTimeRemaining = cpuTime
 		self.IOTimeRemaining = IOTime
 		self.waitTime = 0
+		self.burstTimes = []
+		self.waitTimes = []
 
 	def __lt__(self,other):
 		return self.cpuTime < other.cpuTime
@@ -25,50 +27,77 @@ class Process:
 
 	def sortByBurst(self,other):
 		return self.burstTimeRemaining < other.burstTimeRemaining
-	def setNewCPU(newTime):
+	def setNewCPU(self,newTime):
 		self.cpuTime = newTime
-		self.burstTimeRemaining = cpuTime
-	def setNewIO(newTime):
+		self.burstTimeRemaining = self.cpuTime
+	def setNewIO(self,newTime):
 		self.IOTime = newTime
-		self.IOTimeRemaining = IOTime
+		self.IOTimeRemaining = self.IOTime
+	def printAvgBurst():
+		return str(sum(self.burstTimes)/ float(len(self.burstTimes)))
+	def printAvgWait():
+		return str(sum(self.waitTimes)/ float(len(self.waitTimes)))
 
 def SJF(processes):
 	time = 0
 	cpuWait =[0, 0,0,0]
+	IOWait = []
 	doneProceeses = 0
 	processes.sort()
 	for p in processes:
-			print p
+		pass
+		#print p
 	while doneProceeses !=cpuBound:
-		time+=1
 		for i in range(0,numcores):
 			if cpuWait[i] >0:
 				cpuWait[i]-=1
 				continue
 			if cores[i] == None:
-				cores[i]  = processes.pop(0)
-				print str(time) +"ms: added ID " +str(cores[i].pNum)+ " to core "+ str(i)
+				if processes:
+					cores[i]  = processes.pop(0)
+		#			print str(time) +"ms: added ID " +str(cores[i].pNum)+ " to core "+ str(i)
 
-				continue
+					continue
 			else:
 				cores[i].burstTimeRemaining -=1
 				if cores[i].burstTimeRemaining ==0:
-					print "[time " + str(time) + "ms] Process ID " + str(cores[i].pNum)+" CPU burst done (turnaround time : "+str(time)+ "ms , total wait time "+ str(cores[i].waitTime)+"ms) Core " + str(i)+ " is now free"
-					cores[i].IOTimeRemaining -=1
-					doneProceeses+=1
+					if not cores[i].interactive:
+						cores[i].burstsRemaining-=1
+						if cores[i].burstsRemaining==0:
+							print  "[time " + str(time) + "ms] Process ID " + str(cores[i].pNum) +" terminated " 
+							doneProceeses+=1
+						else:
+							print "[time " + str(time) + "ms] Process ID " + str(cores[i].pNum)+" CPU burst done (turnaround time : "+str(time)+ "ms , total wait time "+ str(cores[i].waitTime)+"ms)"
+					IOWait.append( cores[i])
+					cores[i] = None
 
 
-					print cores[i].IOTimeRemaining
-					if cores[i].IOTimeRemaining == 0:
-						if cores[i].interactive:
-							processes.append(Process(cores[i].pNum, True, random.randint(20,200), random.randint(1000,4500), cores[i].priority))			
-							cores[i] = None
-						#else:
-						#	processes.append(Process(cores[i].pNum, False, random.randint(200,3000), random.randint(1200, 3200), random.randint(0,4)))
+					
 					cpuWait[i] = 2
 		for p in processes:
 			#print p.waitTime
 			p.waitTime+=1
+		for p in IOWait:
+			p.IOTimeRemaining-=1
+			if p.IOTimeRemaining == 0:
+				if p.burstsRemaining == 0:
+					continue
+				if p.interactive:
+					p.setNewIO(random.randint(1000,4500))
+					p.setNewCPU(random.randint(20,200))
+					print "[time " + str(time) + "ms] Interactive process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) +  "ms CPU time; priority " + str(p.priority) + ")"
+
+
+					processes.append(p)
+				else:
+					p.setNewCPU(random.randint(200,3000))
+					p.setNewIO(random.randint(1200,3200))
+					print "[time " + str(time) + "ms] CPU Bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + " CPU time; priority " + str(p.priority) + ")"
+
+					processes.append(p)
+		IOWait [:] = [p for p in IOWait if p.IOTimeRemaining>0 ]
+
+		time+=1
 
 		processes.sort()
 			
@@ -172,7 +201,7 @@ if __name__ == '__main__':
 
 
 	for i in range(1,n+1):
-		if(random.randint(0,100) < 60):
+		if(random.randint(0,100) < 80):
 			processes.append(Process(i, True, random.randint(20,200), random.randint(1000,4500), random.randint(0,4)))
 		else:
 			cpuBound +=1
