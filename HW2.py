@@ -17,30 +17,60 @@ class Process:
 
 	def __lt__(self,other):
 		return self.cpuTime < other.cpuTime
+	def __str__(self):
+		if self.interactive:
+			return "Interactive Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed "
+		else:
+			return "CPU Bound Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed "
+
+	def sortByBurst(self,other):
+		return self.burstTimeRemaining < other.burstTimeRemaining
+	def setNewCPU(newTime):
+		self.cpuTime = newTime
+		self.burstTimeRemaining = cpuTime
+	def setNewIO(newTime):
+		self.IOTime = newTime
+		self.IOTimeRemaining = IOTime
 
 def SJF(processes):
 	time = 0
+	cpuWait =[0, 0,0,0]
 	doneProceeses = 0
 	processes.sort()
+	for p in processes:
+			print p
 	while doneProceeses !=cpuBound:
-
+		time+=1
 		for i in range(0,numcores):
+			if cpuWait[i] >0:
+				cpuWait[i]-=1
+				continue
 			if cores[i] == None:
-				print str(time) +"ms: added something to core "+ str(i)
 				cores[i]  = processes.pop(0)
+				print str(time) +"ms: added ID " +str(cores[i].pNum)+ " to core "+ str(i)
+
 				continue
 			else:
 				cores[i].burstTimeRemaining -=1
 				if cores[i].burstTimeRemaining ==0:
 					print "[time " + str(time) + "ms] Process ID " + str(cores[i].pNum)+" CPU burst done (turnaround time : "+str(time)+ "ms , total wait time "+ str(cores[i].waitTime)+"ms) Core " + str(i)+ " is now free"
-					cores[i] = None
-
+					cores[i].IOTimeRemaining -=1
 					doneProceeses+=1
+
+
+					print cores[i].IOTimeRemaining
+					if cores[i].IOTimeRemaining == 0:
+						if cores[i].interactive:
+							processes.append(Process(cores[i].pNum, True, random.randint(20,200), random.randint(1000,4500), cores[i].priority))			
+							cores[i] = None
+						#else:
+						#	processes.append(Process(cores[i].pNum, False, random.randint(200,3000), random.randint(1200, 3200), random.randint(0,4)))
+					cpuWait[i] = 2
 		for p in processes:
 			#print p.waitTime
 			p.waitTime+=1
 
-		time+=1
+		processes.sort()
 			
 
 
@@ -55,6 +85,7 @@ def RoundRobin(timeSlice, readyQueue):
 		IOQueue = []
 		switching = [0,0,0,0]
 		finished = 0
+
 		while loop:
 			for i in range(0, numcores):
 				if switching[i] > 0:
@@ -141,7 +172,7 @@ if __name__ == '__main__':
 
 
 	for i in range(1,n+1):
-		if(random.randint(0,100) < 80):
+		if(random.randint(0,100) < 60):
 			processes.append(Process(i, True, random.randint(20,200), random.randint(1000,4500), random.randint(0,4)))
 		else:
 			cpuBound +=1
