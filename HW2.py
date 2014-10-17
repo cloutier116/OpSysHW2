@@ -18,29 +18,52 @@ class Process:
 	def __lt__(self,other):
 		return self.cpuTime < other.cpuTime
 
+	def sortByBurst(self,other):
+		return self.burstTimeRemaining < other.burstTimeRemaining
+	def setNewCPU(newTime):
+		self.cpuTime = newTime
+		self.burstTimeRemaining = cpuTime
+	def setNewIO(newTime):
+		self.IOTime = newTime
+		self.IOTimeRemaining = IOTime
+
 def SJF(processes):
 	time = 0
+	cpuWait =[0, 0,0,0]
 	doneProceeses = 0
 	processes.sort()
 	while doneProceeses !=cpuBound:
 
 		for i in range(0,numcores):
+			if cpuWait[i] >0:
+				cpuWait[i]-=1
+				continue
 			if cores[i] == None:
-				print str(time) +"ms: added something to core "+ str(i)
 				cores[i]  = processes.pop(0)
+				print str(time) +"ms: added ID " +str(cores[i].pNum)+ " to core "+ str(i)
+
 				continue
 			else:
 				cores[i].burstTimeRemaining -=1
 				if cores[i].burstTimeRemaining ==0:
 					print "[time " + str(time) + "ms] Process ID " + str(cores[i].pNum)+" CPU burst done (turnaround time : "+str(time)+ "ms , total wait time "+ str(cores[i].waitTime)+"ms) Core " + str(i)+ " is now free"
-					cores[i] = None
+					cores[i].IOTimeRemaining -=1
+					if cores[i].IOTimeRemaining == 0:
+						if cores[i].interactive:
+							cores[i].setNewIO(random.randint(1000,4500))
+							
+							cores[i].setNewCPU(random.randint(20,2000))
+							processes.append(cores[i])
 
+							cores[i] = None
+					cpuWait[i] = 1
 					doneProceeses+=1
 		for p in processes:
 			#print p.waitTime
 			p.waitTime+=1
 
 		time+=1
+		processes.sort()
 			
 
 
@@ -126,7 +149,7 @@ if __name__ == '__main__':
 		else:
 			print "[time " + str(time) + "ms] CPU Bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + " CPU time; priority " + str(p.priority) + ")"
 
-	RoundRobin(100, readyQueue)
+	#RoundRobin(100, readyQueue)
 
 
 	readyQueue.sort()
