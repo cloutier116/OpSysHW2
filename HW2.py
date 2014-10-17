@@ -54,44 +54,73 @@ def RoundRobin(timeSlice, readyQueue):
 		loop = True
 		IOQueue = []
 		switching = [0,0,0,0]
+		finished = 0
 		while loop:
 			for i in range(0, numcores):
 				if switching[i] > 0:
 					switching[i] -= 1
 					continue
 				if cores[i] == None:
-					cores[i] = readyQueue.pop(0)
-					cores[i].timeSlice = 0
+					if len(readyQueue) > 0:
+						cores[i] = readyQueue.pop(0)
+						cores[i].timeSlice = 0
+						switching[i] = 2
+						print "[time " + str(time) + "ms] Context switch (swapping out nothing for process ID " + str(cores[i].pNum) + ")"
+
 				else:
+					#print "Process " + str(cores[i].pNum) + " Timeslice = " +  str(cores[i].timeSlice)
 					cores[i].timeSlice += 1
 					if cores[i].timeSlice >= timeSlice:
 						switching[i] = 2
-						print "[time " + str(time) + "ms] Context switch (swapping out process ID " + str(cores[i].pNum) + " for process ID " + str(readyQueue[0].pNum) + ")"
-						readyQueue.append(cores[i])
-						cores[i] = readyQueue.pop(0)
+						if len(readyQueue) > 0:
+							print "[time " + str(time) + "ms] Context switch (swapping out process ID " + str(cores[i].pNum) + " for process ID " + str(readyQueue[0].pNum) + ")"
+							readyQueue.append(cores[i])
+							cores[i] = readyQueue.pop(0)
+							cores[i].timeSlice = 0
+						else:
+							print "[time " + str(time) + "ms] Context switch (swapping out process ID " + str(cores[i].pNum) + " for nothing)"
+							readyQueue.append(cores[i])
+							cores[i] = None
+							continue
+
 					cores[i].burstTimeRemaining -= 1
 					if cores[i].burstTimeRemaining < 0:
 						switching[i] = 2
 						if(cores[i].interactive):
 							print "[time " + str(time) + "ms] " + "Interactive process ID " + str(cores[i].pNum) + " CPU burst done (turnaround time xms, total wait time " + str(cores[i].waitTime) + "ms)"
 						else:
-							print "[time " + str(time) + "ms] " + "Interactive process ID " + str(cores[i].pNum) + " CPU burst done (turnaround time xms, total wait time " + str(cores[i].waitTime) + "ms)"
+							print "[time " + str(time) + "ms] " + "CPU process ID " + str(cores[i].pNum) + " CPU burst done (turnaround time xms, total wait time " + str(cores[i].waitTime) + "ms)"
 							cores[i].burstsRemaining -= 1
-
-						print "[time " + str(time) + "ms] Context switch (swapping out process ID " + str(cores[i].pNum) + " for process ID " + str(readyQueue[0].pNum) + ")"
-						IOQueue.append(cores[i])
-						cores[i] = readyQueue.pop(0)
-
-			for i in range(0, len(IOQueue)):
-				IOQueue[i].IOTimeRemaining -= 1
-				if IOQueue[i].IOTimeRemaining < 0:
-					if(IOQueue[i].interactive):
-						IOQueue[i].cpuTime = random.randint(20,200)
-					else:
-						IOQueue[i].cpuTime = random.randint(200,3000)	
-					readyQueue.append(IOQueue.pop(i))
-					i-= 1
-				loop = False
+							if cores[i].burstsRemaining <= 0:
+								finished += 1
+								if finished >= cpuBound:
+									loop = False
+						if len(readyQueue) > 0:
+							print "[time " + str(time) + "ms] Context switch (swapping out process ID " + str(cores[i].pNum) + " for process ID " + str(readyQueue[0].pNum) + ")"
+							IOQueue.append(cores[i])
+							cores[i] = readyQueue.pop(0)
+							cores[i].timeSlice = 0
+						else:
+							print "[time " + str(time) + "ms] Context switch (swapping out process ID " + str(cores[i].pNum) + " for nothing)"
+							IOQueue.append(cores[i])
+							cores[i] = None
+							continue
+			if(len(IOQueue) != 0):
+				for i in IOQueue:
+					i.IOTimeRemaining -= 1
+					#print "Core " + str(IOQueue[i].pNum) + " time remaining is " + str(IOQueue[i].IOTimeRemaining)
+					if i.IOTimeRemaining <= 0:
+						if i.interactive:
+							i.cpuTime = random.randint(20,200)
+							i.burstTimeRemaining = i.cpuTime
+							print "[time " + str(time) + "ms] Interactive process ID " + str(i.pNum) + " entered ready queue (requires " + str(p.cpuTime) +  "ms CPU time; priority " + str(p.priority) + ")"
+						else:
+							i.cpuTime = random.randint(200,3000)
+							i.burstTimeRemaining = i.cpuTime
+							print "[time " + str(time) + "ms] CPU Bound process ID " + str(i.pNum) + " entered ready queue (requires " + str(p.cpuTime) + "ms CPU time; priority " + str(p.priority) + ")"
+						if i.burstsRemaining > 0:
+							readyQueue.append(i)
+				IOQueue[:] = [x for x in IOQueue if x.IOTimeRemaining > 0]
 
 			for p in readyQueue:
 				p.waitTime+=1
@@ -124,7 +153,7 @@ if __name__ == '__main__':
 		if(p.interactive):
 			print "[time " + str(time) + "ms] Interactive process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) +  "ms CPU time; priority " + str(p.priority) + ")"
 		else:
-			print "[time " + str(time) + "ms] CPU Bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + " CPU time; priority " + str(p.priority) + ")"
+			print "[time " + str(time) + "ms] CPU Bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + "ms CPU time; priority " + str(p.priority) + ")"
 
 	RoundRobin(100, readyQueue)
 
