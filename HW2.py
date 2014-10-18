@@ -51,6 +51,7 @@ class Process:
 
 def SJF(inputQueue):
 	myQueue = inputQueue[:]
+	storedQueue = copy.copy(myQueue)
 	time = 0
 	cpuWait =[0, 0,0,0]
 	IOWait = []
@@ -68,6 +69,7 @@ def SJF(inputQueue):
 
 					continue
 			else:
+				cores[i].turnaroundTime += 1
 				cores[i].burstTimeRemaining -=1
 				if cores[i].burstTimeRemaining ==0:
 					if not cores[i].interactive:
@@ -102,6 +104,7 @@ def SJF(inputQueue):
 		for p in myQueue:
 			#print p.waitTime
 			p.waitTime+=1
+			p.turnaroundTime += 1
 
 
 		if(len(IOWait) != 0):
@@ -136,18 +139,29 @@ def SJF(inputQueue):
 		time+=1
 
 		myQueue.sort()
-	minTurn = processes[0].turnaroundTimes[0]
-	maxTurn = processes[0].turnaroundTimes[0]
+	minTurn = storedQueue[0].turnaroundTimes[0]
+	maxTurn = storedQueue[0].turnaroundTimes[0]
 	avgTurn = 0
-	for process in processes:
+	minWait = storedQueue[0].waitTimes[0]
+	maxWait = storedQueue[0].waitTimes[0]
+	avgWait = 0
+	for process in storedQueue:
 		for time in process.turnaroundTimes:
 			if time < minTurn:
 				minTurn = time
 			if time > maxTurn:
 				maxTurn = time
 			avgTurn += time
-	avgTurn /= float(bursts*len(processes))
-	print "Turnaround time: min " + str(minTurn) + "ms; avg " + str(avgTurn) + "ms; max " + str(maxTurn) + "ms"
+		for time in process.waitTimes:
+			if time < minWait:
+				minWait = time
+			if time > maxWait:
+				maxWait = time
+			avgWait += time
+	avgTurn /= float(bursts*len(storedQueue))
+	avgWait /= float(bursts*len(storedQueue))
+	print ("Turnaround time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minTurn, avgTurn, maxTurn))
+	print ("Total wait time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minWait, avgWait, maxWait))
 			
 
 
@@ -160,6 +174,7 @@ def context(processA, processB,time):
 		
 
 def RoundRobin(timeSlice, readyQueue):
+		storedQueue = copy.copy(readyQueue)
 		time = 0
 		myQueue = readyQueue[:]
 		IOQueue = []
@@ -250,13 +265,13 @@ def RoundRobin(timeSlice, readyQueue):
 
 			time += 1
 
-		"""minTurn = processes[0].turnaroundTimes[0]
-		maxTurn = processes[0].turnaroundTimes[0]
+		minTurn = storedQueue[0].turnaroundTimes[0]
+		maxTurn = storedQueue[0].turnaroundTimes[0]
 		avgTurn = 0
-		minWait = processes[0].waitTimes[0]
-		maxWait = processes[0].waitTimes[0]
+		minWait = storedQueue[0].waitTimes[0]
+		maxWait = storedQueue[0].waitTimes[0]
 		avgWait = 0
-		for process in readyQueue:
+		for process in storedQueue:
 			for time in process.turnaroundTimes:
 				if time < minTurn:
 					minTurn = time
@@ -269,11 +284,10 @@ def RoundRobin(timeSlice, readyQueue):
 				if time > maxWait:
 					maxWait = time
 				avgWait += time
-		avgTurn /= float(bursts*len(readyQueue))
-		avgWait /= float(bursts*len(readyQueue))
-		print "Turnaround time: min " + str(minTurn) + "ms; avg " + str(avgTurn) + "ms; max " + str(maxTurn) + "ms"
-		print "Total wait time: min " + str(minWait) + "ms; avg " + str(avgWait) + "ms; max " + str(maxWait) + "ms"
-		"""
+		avgTurn /= float(bursts*len(storedQueue))
+		avgWait /= float(bursts*len(storedQueue))
+		print ("Turnaround time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minTurn, avgTurn, maxTurn))
+		print ("Total wait time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minWait, avgWait, maxWait))
 
 if __name__ == '__main__':
 	n = 12
@@ -303,7 +317,14 @@ if __name__ == '__main__':
 
 
 	RoundRobin(100, copy.deepcopy(readyQueue))
-	
+	print "\n"
+
+	time = 0
+	for p in processes:
+		if(p.interactive):
+			print "[time " + str(time) + "ms] Interactive process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) +  "ms CPU time; priority " + str(p.priority) + ")"
+		else:
+			print "[time " + str(time) + "ms] CPU-ound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + "ms CPU time; priority " + str(p.priority) + ")"
 
 	SJF(copy.deepcopy(readyQueue))
 
