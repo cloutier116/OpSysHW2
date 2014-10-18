@@ -39,6 +39,8 @@ class Process:
 	def setNewIO(self,newTime):
 		self.IOTime = newTime
 		self.IOTimeRemaining = self.IOTime
+	def getTurnaround(self):
+		return self.cpuTime+self.waitTime
 	def printAvgBurst(self):
 		return str(sum(self.burstTimes)/ float(len(self.burstTimes)))
 	def printAvgWait(self):
@@ -52,9 +54,6 @@ def SJF(processes):
 	IOWait = []
 	doneProceeses = 0
 	processes.sort()
-	for p in processes:
-		pass
-		#print p
 	while doneProceeses !=cpuBound:
 		for i in range(0,numcores):
 			if cpuWait[i] >0:
@@ -75,7 +74,7 @@ def SJF(processes):
 							print  "[time " + str(time) + "ms] Process ID " + str(cores[i].pNum) +" terminated " 
 							doneProceeses+=1
 						else:
-							print "[time " + str(time) + "ms] Process ID " + str(cores[i].pNum)+" CPU burst done (turnaround time : "+str(time)+ "ms , total wait time "+ str(cores[i].waitTime)+"ms)"
+							print "[time " + str(time) + "ms] Process ID " + str(cores[i].pNum)+" CPU burst done (turnaround time : "+str(cores[i].cpuTime+ cores[i].waitTime )+ "ms , total wait time "+ str(cores[i].waitTime)+"ms)"
 					IOWait.append( cores[i])
 					cores[i] = None
 
@@ -86,6 +85,7 @@ def SJF(processes):
 			#print p.waitTime
 			p.waitTime+=1
 		for p in IOWait:
+			print len(IOWait)
 			p.IOTimeRemaining-=1
 			if p.IOTimeRemaining == 0:
 				if p.burstsRemaining == 0:
@@ -93,14 +93,14 @@ def SJF(processes):
 				if p.interactive:
 					p.setNewIO(random.randint(1000,4500))
 					p.setNewCPU(random.randint(20,200))
-					print "[time " + str(time) + "ms] Interactive process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) +  "ms CPU time; priority " + str(p.priority) + ")"
+					#print "[time " + str(time) + "ms] Interactive process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) +  "ms CPU time; priority " + str(p.priority) + ")"
 
 
 					processes.append(p)
 				else:
 					p.setNewCPU(random.randint(200,3000))
 					p.setNewIO(random.randint(1200,3200))
-					print "[time " + str(time) + "ms] CPU Bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + " CPU time; priority " + str(p.priority) + ")"
+					#print "[time " + str(time) + "ms] CPU Bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + " CPU time; priority " + str(p.priority) + ")"
 
 					processes.append(p)
 		IOWait [:] = [p for p in IOWait if p.IOTimeRemaining>0 ]
