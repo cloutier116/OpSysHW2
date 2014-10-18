@@ -1,5 +1,6 @@
 import random
 import sys
+import copy
 
 #Chris Cloutier
 #Parshva Shah
@@ -29,7 +30,7 @@ class Process:
 		if self.interactive:
 			return "Interactive Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed "
 		else:
-			return "CPU Bound Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed "
+			return "CPU-bound Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed "
 
 	def sortByBurst(self,other):
 		return self.burstTimeRemaining < other.burstTimeRemaining
@@ -170,6 +171,7 @@ def RoundRobin(timeSlice, readyQueue):
 							IOQueue.append(cores[i])
 							cores[i] = None
 							continue
+			
 			if(len(IOQueue) != 0):
 				returnQueue = []
 				returnQueue[:] = [x for x in IOQueue if x.IOTimeRemaining <= 1]
@@ -194,7 +196,7 @@ def RoundRobin(timeSlice, readyQueue):
 						i.waitTime = 0		
 						i.turnaroundTimes.append(i.turnaroundTime)
 						i.turnaroundTime = 0				
-						print "[time " + str(time) + "ms] CPU Bound process ID " + str(i.pNum) + " entered ready queue (requires " + str(i.cpuTime) + "ms CPU time; priority " + str(i.priority) + ")"
+						print "[time " + str(time) + "ms] CPU-bound process ID " + str(i.pNum) + " entered ready queue (requires " + str(i.cpuTime) + "ms CPU time; priority " + str(i.priority) + ")"
 					if i.burstsRemaining > 0:
 						readyQueue.append(i)
 				
@@ -205,18 +207,30 @@ def RoundRobin(timeSlice, readyQueue):
 
 			time += 1
 
-		minTurn = processes[0].turnaroundTimes[0]
+		"""minTurn = processes[0].turnaroundTimes[0]
 		maxTurn = processes[0].turnaroundTimes[0]
 		avgTurn = 0
-		for process in processes:
+		minWait = processes[0].waitTimes[0]
+		maxWait = processes[0].waitTimes[0]
+		avgWait = 0
+		for process in readyQueue:
 			for time in process.turnaroundTimes:
 				if time < minTurn:
 					minTurn = time
 				if time > maxTurn:
 					maxTurn = time
 				avgTurn += time
-		avgTurn /= float(bursts*len(processes))
+			for time in process.waitTimes:
+				if time < minWait:
+					minWait = time
+				if time > maxWait:
+					maxWait = time
+				avgWait += time
+		avgTurn /= float(bursts*len(readyQueue))
+		avgWait /= float(bursts*len(readyQueue))
 		print "Turnaround time: min " + str(minTurn) + "ms; avg " + str(avgTurn) + "ms; max " + str(maxTurn) + "ms"
+		print "Total wait time: min " + str(minWait) + "ms; avg " + str(avgWait) + "ms; max " + str(maxWait) + "ms"
+		"""
 
 if __name__ == '__main__':
 	n = 12
@@ -242,8 +256,10 @@ if __name__ == '__main__':
 		if(p.interactive):
 			print "[time " + str(time) + "ms] Interactive process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) +  "ms CPU time; priority " + str(p.priority) + ")"
 		else:
-			print "[time " + str(time) + "ms] CPU Bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + "ms CPU time; priority " + str(p.priority) + ")"
+			print "[time " + str(time) + "ms] CPU-ound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + "ms CPU time; priority " + str(p.priority) + ")"
 
-	RoundRobin(100, readyQueue)
 
-	#SJF(readyQueue)
+	RoundRobin(100, copy.deepcopy(readyQueue))
+	
+
+	SJF(list(readyQueue))
