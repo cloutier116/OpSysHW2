@@ -54,12 +54,15 @@ def SJF(inputQueue):
 	myQueue = inputQueue[:]
 	storedQueue = copy.copy(myQueue)
 	time = 0
-	cpuWait =[0, 0,0,0]
+	cpuWait =[0 for i in range(0, numcores)]
+	cpuUse = [0 for i in range(0,numcores)]
 	IOWait = []
 	doneProcesses = 0
 	myQueue.sort()
 	while doneProcesses !=cpuBound:
 		for i in range(0,numcores):
+			if cores[i]:
+				cpuUse[i] +=1
 			if cpuWait[i] >0:
 				cpuWait[i]-=1
 				continue
@@ -163,13 +166,15 @@ def SJF(inputQueue):
 	avgWait /= float(bursts*len(storedQueue))
 	print ("Turnaround time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minTurn, avgTurn, maxTurn))
 	print ("Total wait time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minWait, avgWait, maxWait))
+	for i in xrange(0,numcores):
+		pass
 			
 
 def SJFPreempt(inputQueue):
 	myQueue = inputQueue[:]
 	storedQueue = copy.copy(myQueue)
 	time = 0
-	cpuWait =[0, 0,0,0]
+	cpuWait =[0 for i in range(0,numcores)]
 	IOWait = []
 	doneProcesses = 0
 	myQueue.sort(sortByBurst)
@@ -322,7 +327,7 @@ def RoundRobin(timeSlice, readyQueue):
 		time = 0
 		myQueue = readyQueue[:]
 		IOQueue = []
-		switching = [0,0,0,0]
+		switching = [0 for i in range(0, numcores)]
 		finished = 0
 
 		while finished != cpuBound:
@@ -435,7 +440,7 @@ def RoundRobin(timeSlice, readyQueue):
 
 if __name__ == '__main__':
 	n = 12
-	numcores = 4
+	numcores = 12
 	processes = []
 	cores = [None for i in range(0,numcores) ]
 	time = 0
@@ -460,9 +465,9 @@ if __name__ == '__main__':
 			print "[time " + str(time) + "ms] CPU-ound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + "ms CPU time; priority " + str(p.priority) + ")"
 
 
-	"""SJF(copy.deepcopy(readyQueue))
+	SJF(copy.deepcopy(readyQueue))
 	print "\n"
-
+"""
 	time = 0
 	for p in processes:
 		if(p.interactive):
@@ -470,7 +475,7 @@ if __name__ == '__main__':
 		else:
 			print "[time " + str(time) + "ms] CPU-ound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + "ms CPU time; priority " + str(p.priority) + ")"
 """
-	SJFPreempt(copy.deepcopy(readyQueue))
+	#SJFPreempt(copy.deepcopy(readyQueue))
 """
 	time = 0
 	for p in processes:
