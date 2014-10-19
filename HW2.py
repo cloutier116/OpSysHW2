@@ -29,9 +29,9 @@ class Process:
 		return self.cpuTime < other.cpuTime
 	def __str__(self):
 		if self.interactive:
-			return "Interactive Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed "
+			return "Interactive Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed. "+ str(self.burstTimeRemaining)+ "Burst time remaining"
 		else:
-			return "CPU Bound Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed "
+			return "CPU Bound Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed "+ str(self.burstTimeRemaining)+ "Burst time remaining"
 		#added helper functions
 	def setNewCPU(self,newTime):
 		self.cpuTime = newTime
@@ -177,6 +177,7 @@ def SJF(inputQueue):
 		print "process ID %d: %.3f%%" %(process.pNum , process.totalCPUTime/float(time * 4) * 100)
 						
 
+
 def SJFPreempt(inputQueue):
 	myQueue = inputQueue[:]
 	storedQueue = copy.copy(myQueue)
@@ -193,11 +194,12 @@ def SJFPreempt(inputQueue):
 				cpuWait[i]-=1
 				continue
 			if cores[i]:
+				cpuUse[i] += 1
 				cores[i].totalCPUTime += 1
 			if cores[i] == None:
 				if myQueue:
 					cores[i]  = myQueue.pop(0)
-					print str(time) +"ms: added ID " +str(cores[i].pNum)+ " to core "+ str(i)
+					#print str(time) +"ms: added ID " +str(cores[i].pNum)+ " to core "+ str(i)
 
 					continue
 			else:
@@ -268,17 +270,19 @@ def SJFPreempt(inputQueue):
 								longestCore = j
 				 
 					if longestCore and i.burstTimeRemaining < cores[longestCore].burstTimeRemaining:
-						print "\n"
+						
 						context(cores[longestCore], i, time)
-						print "\n"
-						myQueue.append(cores[longestCore])
-						for process in myQueue:
-							print process
-						print ""
+						
+ 						if cores[longestCore] not in myQueue:
+							myQueue.append(cores[longestCore])
+						
+						
+						
 						cores[longestCore] = i
 						cpuWait[longestCore] = 2
 					else:
-						myQueue.append(i)
+
+						myQueue.append(i)	
 				else:
 					#i.waitTime = 0
 					i.setNewCPU(random.randint(200,3000))
@@ -298,18 +302,16 @@ def SJFPreempt(inputQueue):
 								longestCore = j
 				 
 					if longestCore and i.burstTimeRemaining < cores[longestCore].burstTimeRemaining:
-						print "\n"
+						
 						context(cores[longestCore], i, time)
-						print "\n"
+						
 						myQueue.append(cores[longestCore])
-						for process in myQueue:
-							print process
-						print ""
+						
 						cores[longestCore] = i
 						cpuWait[longestCore] = 2
 					else:
 						myQueue.append(i)
-					
+
 		
 		time+=1
 
@@ -513,7 +515,8 @@ if __name__ == '__main__':
 
 	
 	SJF(copy.deepcopy(readyQueue))
-	print "\n"
+
+	raw_input("Press Enter to Continue:")
 	
 	time = 0
 	for p in processes:
@@ -523,6 +526,8 @@ if __name__ == '__main__':
 			print "[time " + str(time) + "ms] CPU-ound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + "ms CPU time; priority " + str(p.priority) + ")"
 	
 	SJFPreempt(copy.deepcopy(readyQueue))
+
+	raw_input("Press Enter to Continue:")
 	
 	time = 0
 	for p in processes:
