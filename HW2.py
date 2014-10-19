@@ -29,9 +29,9 @@ class Process:
 		return self.cpuTime < other.cpuTime
 	def __str__(self):
 		if self.interactive:
-			return "Interactive Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed. "+ str(self.burstTimeRemaining)+ "Burst time remaining"
+			return "Interactive Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed. "+ str(self.burstTimeRemaining)+ " Burst time remaining. Priority of" + str(self.priority)
 		else:
-			return "CPU Bound Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed "+ str(self.burstTimeRemaining)+ "Burst time remaining"
+			return "CPU Bound Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed "+ str(self.burstTimeRemaining)+ " Burst time remaining. Priority of" + str(self.priority)
 		#added helper functions
 	def setNewCPU(self,newTime):
 		self.cpuTime = newTime
@@ -50,6 +50,9 @@ class Process:
 
 def sortByBurst(self,other):
 		return self.burstTimeRemaining < other.burstTimeRemaining
+
+def sortByPriority(self,other):
+		return self.priority < other.priority
 
 def SJF(inputQueue):
 	myQueue = inputQueue[:]
@@ -355,6 +358,182 @@ def context(processA, processB,time):
 	else:
 		print "[time " + str(time) + "ms] Context switch (swapping out Process ID " + str(processA.pNum) + " for Process ID " + str(processB.pNum) +")"
 	
+def PriorityAlgo(inputQueue):
+	myQueue = inputQueue[:]
+	storedQueue = copy.copy(myQueue)
+	time = 0
+	cpuWait = [0 for x in range(0,numcores)]
+	cpuUse = [0 for i in range(0,numcores)]
+	IOWait = []
+	doneProcesses = 0
+	#myQueue.sort()
+	myQueue = sorted(myQueue, key=lambda process: process.priority)
+	while doneProcesses !=cpuBound:
+		for i in range(0,numcores):
+			if cpuWait[i] >0:
+				cpuWait[i]-=1
+				continue
+			if cores[i]:
+				cpuUse[i] += 1
+				cores[i].totalCPUTime += 1
+			if cores[i] == None:
+				if myQueue:
+					cores[i]  = myQueue.pop(0)
+					#print str(time) +"ms: added ID " +str(cores[i].pNum)+ " to core "+ str(i)
+
+					continue
+			else:
+				cores[i].turnaroundTime += 1
+				cores[i].burstTimeRemaining -=1
+				if cores[i].burstTimeRemaining ==0:
+					if not cores[i].interactive:
+						cores[i].burstsRemaining-=1
+						if cores[i].burstsRemaining==0:
+							print  "[time " + str(time) + "ms] CPU Process ID " + str(cores[i].pNum) +" terminated " 
+							doneProcesses+=1
+						else:
+							print "[time " + str(time) + "ms] CPU Process ID " + str(cores[i].pNum)+" CPU burst done (turnaround time : "+str(cores[i].cpuTime+ cores[i].waitTime )+ "ms , total wait time "+ str(cores[i].waitTime)+"ms)"
+							if myQueue:
+								context(cores[i],myQueue[0],time)
+							else:
+								print "[time " + str(time) + "ms] Context switch (swapping out Process ID " + str(cores[i].pNum) + " for None)"
+
+					else:
+						
+						print "[time " + str(time) + "ms] Interactive Process ID " + str(cores[i].pNum)+" CPU burst done (turnaround time : "+str(cores[i].cpuTime+ cores[i].waitTime )+ "ms , total wait time "+ str(cores[i].waitTime)+"ms)"
+						if myQueue:
+								context(cores[i],myQueue[0],time)
+						else:
+							print "[time " + str(time) + "ms] Context switch (swapping out Process ID " + str(cores[i].pNum) + " for None)"
+
+
+					
+
+					IOWait.append( cores[i])
+					if myQueue:
+						cores[i] = myQueue.pop(0)
+					else:
+						cores[i] = None
+
+
+					cpuWait[i] = 2
+		for p in myQueue:
+			#print p.waitTime
+			p.waitTime+=1
+			if p.waitTime  %  1200 == 0 and p.priority > 0:
+				p.priority -=1
+				if p.interactive:
+					print "[time " + str(time) + "ms] Increased priority of IO-bound process ID " + str(p.pNum)+ " to "+ str(p.priority)+ "  due to aging"
+				else:
+					print "[time " + str(time) + "ms] Increased priority of CPU-bound process ID " + str(p.pNum)+ " to "+ str(p.priority)+ "  due to aging"
+
+				
+			p.turnaroundTime += 1
+
+
+		if(len(IOWait) != 0):
+			returnQueue = []
+			returnQueue[:] = [x for x in IOWait if x.IOTimeRemaining <= 1]
+			IOWait[:] = [x for x in IOWait if x.IOTimeRemaining > 1]
+			for i in IOWait:
+				i.IOTimeRemaining -= 1
+			for i in returnQueue:
+				#print "Core " + str(IOQueue[i].pNum) + " time remaining is " + str(IOQueue[i].IOTimeRemaining)
+				if i.interactive:
+					i.setNewCPU(random.randint(20,200))
+					i.setNewIO(random.randint(1000,4500))
+					i.waitTimes.append(i.waitTime)
+					i.waitTime = 0
+					i.turnaroundTimes.append(i.turnaroundTime)
+					i.turnaroundTime = 0
+					print "[time " + str(time) + "ms] Interactive process ID " + str(i.pNum) + " entered ready queue (requires " + str(i.cpuTime) +  "ms CPU time; priority " + str(i.priority) + ")"
+					importantCore = None
+					for j in range(0, numcores):
+						if cores[j]:
+							if importantCore:
+								if cores[j].priority > cores[importantCore].priority:
+									importantCore = j
+							else:
+								importantCore = j
+				 
+					if importantCore and i.priority < cores[importantCore].priority:
+						
+						context(cores[importantCore], i, time)
+						
+ 						if cores[importantCore] not in myQueue:
+							myQueue.append(cores[importantCore])
+						
+						
+						
+						cores[importantCore] = i
+						cpuWait[importantCore] = 2
+					else:
+
+						myQueue.append(i)	
+				else:
+					#i.waitTime = 0
+					i.setNewCPU(random.randint(200,3000))
+					i.setNewIO(random.randint(1200,3200))   
+					i.waitTimes.append(i.waitTime)
+					i.waitTime = 0      
+					i.turnaroundTimes.append(i.turnaroundTime)
+					i.turnaroundTime = 0    
+					print "[time " + str(time) + "ms] CPU Bound process ID " + str(i.pNum) + " entered ready queue (requires " + str(i.cpuTime) + "ms CPU time; priority " + str(i.priority) + ")"
+					importantCore = None
+					for j in range(0, numcores):
+						if cores[j]:
+							if importantCore:
+								if cores[j].priority < cores[importantCore].priority:
+									importantCore = j
+							else:
+								importantCore = j
+				 
+					if importantCore and i.priority > cores[importantCore].priority:
+						
+						context(cores[importantCore], i, time)
+						
+						myQueue.append(cores[importantCore])
+						
+						cores[importantCore] = i
+						cpuWait[importantCore] = 2
+					else:
+						myQueue.append(i)
+
+		
+		time+=1
+
+		#myQueue.sort(sortByBurst)
+		myQueue = sorted(myQueue, key=lambda process: process.priority)
+	if storedQueue and storedQueue[0]:
+		minTurn = storedQueue[0].turnaroundTimes[0]
+		maxTurn = storedQueue[0].turnaroundTimes[0]
+		avgTurn = 0
+		minWait = storedQueue[0].waitTimes[0]
+		maxWait = storedQueue[0].waitTimes[0]
+		avgWait = 0
+	if storedQueue:
+		for process in storedQueue:
+			for processtime in process.turnaroundTimes:
+				if processtime < minTurn:
+					minTurn = processtime
+				if processtime > maxTurn:
+					maxTurn = processtime
+				avgTurn += processtime
+			for processtime in process.waitTimes:
+				if processtime < minWait:
+					minWait = processtime
+				if processtime > maxWait:
+					maxWait = processtime
+				avgWait += processtime
+		avgTurn /= float(bursts*len(storedQueue))
+		avgWait /= float(bursts*len(storedQueue))
+		print ("Turnaround time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minTurn, avgTurn, maxTurn))
+		print ("Total wait time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minWait, avgWait, maxWait))
+		print "Average CPU utilization: %.3f%%" % (sum(cpuUse)/float(time * 4) * 100)
+		print "Average CPU utilization per process:"
+		for process in storedQueue:
+			print "process ID %d: %.3f%%" %(process.pNum , process.totalCPUTime/float(time * 4) * 100)
+			
 		
 
 def RoundRobin(timeSlice, readyQueue):
@@ -488,12 +667,12 @@ if __name__ == '__main__':
 	cores = [None for i in range(0,numcores) ]
 	time = 0
 	cpuBound = 0
-	bursts = 2
+	bursts = 20
 
 
 
 	for i in range(1,n+1):
-		if i > 4:
+		if i > n/3:
 			processes.append(Process(i, True, random.randint(20,200), random.randint(1000,4500), random.randint(0,4),bursts))
 		else:
 			cpuBound +=1
@@ -503,7 +682,7 @@ if __name__ == '__main__':
 
 	for i in range(0,len(processes)):
 		processes[i].pNum = i+1
-
+	
 	readyQueue = []
 	for p in processes:
 		readyQueue.append(p)
@@ -513,11 +692,10 @@ if __name__ == '__main__':
 			print "[time " + str(time) + "ms] CPU-bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + "ms CPU time; priority " + str(p.priority) + ")"
 
 
-	
+	print "=============== DOING SJF ==============="
 	SJF(copy.deepcopy(readyQueue))
 
-	raw_input("Press Enter to Continue:")
-	
+	print
 	time = 0
 	for p in processes:
 		if(p.interactive):
@@ -525,10 +703,12 @@ if __name__ == '__main__':
 		else:
 			print "[time " + str(time) + "ms] CPU-ound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + "ms CPU time; priority " + str(p.priority) + ")"
 	
+	print "=====================DOING SRT======================"
+	cores = [None for i in range(0,numcores) ]
+
 	SJFPreempt(copy.deepcopy(readyQueue))
 
-	raw_input("Press Enter to Continue:")
-	
+	print
 	time = 0
 	for p in processes:
 		if(p.interactive):
@@ -536,5 +716,21 @@ if __name__ == '__main__':
 		else:
 			print "[time " + str(time) + "ms] CPU-bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + "ms CPU time; priority " + str(p.priority) + ")"
 
+	print "=================DOING RR==============="
+	cores = [None for i in range(0,numcores) ]
 
 	RoundRobin(100, copy.deepcopy(readyQueue)) 
+	print
+
+	time = 0
+	for p in processes:
+		if(p.interactive):
+			print "[time " + str(time) + "ms] Interactive process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) +  "ms CPU time; priority " + str(p.priority) + ")"
+		else:
+			print "[time " + str(time) + "ms] CPU-bound process ID " + str(p.pNum) + " entered ready queue (requires " + str(p.cpuTime) + "ms CPU time; priority " + str(p.priority) + ")"
+
+		
+	print"===================DOING PRIORITY====================== "
+	cores = [None for i in range(0,numcores) ]
+
+	PriorityAlgo(copy.deepcopy(readyQueue)) 
