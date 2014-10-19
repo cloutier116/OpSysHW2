@@ -5,6 +5,9 @@ import copy
 #Chris Cloutier
 #Parshva Shah
 
+#run with defaults by giving no command line arguments
+#Command line arguments are of the form python HW2.py numprocesses, numcores, timeslice
+
 class Process:
 	def __init__ (self, pNum, interactive, cpuTime, IOTime, priority, bursts):
 		self.state = 0 #0 = ready, 1 = active, 2 = blocked on I/O
@@ -29,9 +32,9 @@ class Process:
 		return self.cpuTime < other.cpuTime
 	def __str__(self):
 		if self.interactive:
-			return "Interactive Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed. "+ str(self.burstTimeRemaining)+ " Burst time remaining. Priority of" + str(self.priority)
+			return "Interactive Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed. "+ str(self.burstTimeRemaining)+ " Burst time remaining. Priority of " + str(self.priority)
 		else:
-			return "CPU Bound Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed "+ str(self.burstTimeRemaining)+ " Burst time remaining. Priority of" + str(self.priority)
+			return "CPU Bound Process ID " + str(self.pNum) + " with "+str(self.cpuTime) +" burst time and " + str(self.IOTime)+" IO time needed "+ str(self.burstTimeRemaining)+ " Burst time remaining. Priority of " + str(self.priority)
 		#added helper functions
 	def setNewCPU(self,newTime):
 		self.cpuTime = newTime
@@ -54,8 +57,7 @@ def sortByBurst(self,other):
 def sortByPriority(self,other):
 		return self.priority < other.priority
 
-def SJF(inputQueue):
-	myQueue = inputQueue[:]
+def SJF(myQueue):
 	storedQueue = copy.copy(myQueue)
 	time = 0
 	cpuWait =[0 for i in range(0, numcores)]
@@ -151,34 +153,36 @@ def SJF(inputQueue):
 		time+=1
 
 		myQueue.sort()
-	minTurn = storedQueue[0].turnaroundTimes[0]
-	maxTurn = storedQueue[0].turnaroundTimes[0]
-	avgTurn = 0
-	minWait = storedQueue[0].waitTimes[0]
-	maxWait = storedQueue[0].waitTimes[0]
-	avgWait = 0
-	for process in storedQueue:
-		for processtime in process.turnaroundTimes:
-			if processtime < minTurn:
-				minTurn = processtime
-			if processtime > maxTurn:
-				maxTurn = processtime
-			avgTurn += processtime
-		for processtime in process.waitTimes:
-			if processtime < minWait:
-				minWait = processtime
-			if processtime > maxWait:
-				maxWait = processtime
-			avgWait += processtime
-	avgTurn /= float(bursts*len(storedQueue))
-	avgWait /= float(bursts*len(storedQueue))
-	print ("Turnaround time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minTurn, avgTurn, maxTurn))
-	print ("Total wait time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minWait, avgWait, maxWait))
-	print "Average CPU utilization: %.3f%%" % (sum(cpuUse)/float(time * 4) * 100)
-	print "Average CPU utilization per process:"
-	for process in storedQueue:
-		print "process ID %d: %.3f%%" %(process.pNum , process.totalCPUTime/float(time * 4) * 100)
-						
+	
+	if cpuBound > 0:
+		minTurn = storedQueue[0].turnaroundTimes[0]
+		maxTurn = storedQueue[0].turnaroundTimes[0]
+		avgTurn = 0
+		minWait = storedQueue[0].waitTimes[0]
+		maxWait = storedQueue[0].waitTimes[0]
+		avgWait = 0
+		for process in storedQueue:
+			for processtime in process.turnaroundTimes:
+				if processtime < minTurn:
+					minTurn = processtime
+				if processtime > maxTurn:
+					maxTurn = processtime
+				avgTurn += processtime
+			for processtime in process.waitTimes:
+				if processtime < minWait:
+					minWait = processtime
+				if processtime > maxWait:
+					maxWait = processtime
+				avgWait += processtime
+		avgTurn /= float(bursts*len(storedQueue))
+		avgWait /= float(bursts*len(storedQueue))
+		print ("Turnaround time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minTurn, avgTurn, maxTurn))
+		print ("Total wait time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minWait, avgWait, maxWait))
+		print "Average CPU utilization: %.3f%%" % (sum(cpuUse)/float(time * numcores) * 100)
+		print "Average CPU utilization per process:"
+		for process in storedQueue:
+			print "process ID %d: %.3f%%" %(process.pNum , process.totalCPUTime/float(time * numcores) * 100)
+							
 
 
 def SJFPreempt(inputQueue):
@@ -320,36 +324,36 @@ def SJFPreempt(inputQueue):
 
 		#myQueue.sort(sortByBurst)
 		myQueue = sorted(myQueue, key=lambda process: process.burstTimeRemaining)
-	if storedQueue and storedQueue[0]:
+	if cpuBound > 0:
 		minTurn = storedQueue[0].turnaroundTimes[0]
 		maxTurn = storedQueue[0].turnaroundTimes[0]
 		avgTurn = 0
 		minWait = storedQueue[0].waitTimes[0]
 		maxWait = storedQueue[0].waitTimes[0]
 		avgWait = 0
-	if storedQueue:
-		for process in storedQueue:
-			for processtime in process.turnaroundTimes:
-				if processtime < minTurn:
-					minTurn = processtime
-				if processtime > maxTurn:
-					maxTurn = processtime
-				avgTurn += processtime
-			for processtime in process.waitTimes:
-				if processtime < minWait:
-					minWait = processtime
-				if processtime > maxWait:
-					maxWait = processtime
-				avgWait += processtime
-		avgTurn /= float(bursts*len(storedQueue))
-		avgWait /= float(bursts*len(storedQueue))
-		print ("Turnaround time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minTurn, avgTurn, maxTurn))
-		print ("Total wait time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minWait, avgWait, maxWait))
-		print "Average CPU utilization: %.3f%%" % (sum(cpuUse)/float(time * 4) * 100)
-		print "Average CPU utilization per process:"
-		for process in storedQueue:
-			print "process ID %d: %.3f%%" %(process.pNum , process.totalCPUTime/float(time * 4) * 100)
-			
+		if storedQueue:
+			for process in storedQueue:
+				for processtime in process.turnaroundTimes:
+					if processtime < minTurn:
+						minTurn = processtime
+					if processtime > maxTurn:
+						maxTurn = processtime
+					avgTurn += processtime
+				for processtime in process.waitTimes:
+					if processtime < minWait:
+						minWait = processtime
+					if processtime > maxWait:
+						maxWait = processtime
+					avgWait += processtime
+			avgTurn /= float(bursts*len(storedQueue))
+			avgWait /= float(bursts*len(storedQueue))
+			print ("Turnaround time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minTurn, avgTurn, maxTurn))
+			print ("Total wait time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minWait, avgWait, maxWait))
+			print "Average CPU utilization: %.3f%%" % (sum(cpuUse)/float(time * numcores) * 100)
+			print "Average CPU utilization per process:"
+			for process in storedQueue:
+				print "process ID %d: %.3f%%" %(process.pNum , process.totalCPUTime/float(time * numcores) * 100)
+				
 
 
 def context(processA, processB,time):
@@ -504,36 +508,36 @@ def PriorityAlgo(inputQueue):
 
 		#myQueue.sort(sortByBurst)
 		myQueue = sorted(myQueue, key=lambda process: process.priority)
-	if storedQueue and storedQueue[0]:
+	if cpuBound > 0:
 		minTurn = storedQueue[0].turnaroundTimes[0]
 		maxTurn = storedQueue[0].turnaroundTimes[0]
 		avgTurn = 0
 		minWait = storedQueue[0].waitTimes[0]
 		maxWait = storedQueue[0].waitTimes[0]
 		avgWait = 0
-	if storedQueue:
-		for process in storedQueue:
-			for processtime in process.turnaroundTimes:
-				if processtime < minTurn:
-					minTurn = processtime
-				if processtime > maxTurn:
-					maxTurn = processtime
-				avgTurn += processtime
-			for processtime in process.waitTimes:
-				if processtime < minWait:
-					minWait = processtime
-				if processtime > maxWait:
-					maxWait = processtime
-				avgWait += processtime
-		avgTurn /= float(bursts*len(storedQueue))
-		avgWait /= float(bursts*len(storedQueue))
-		print ("Turnaround time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minTurn, avgTurn, maxTurn))
-		print ("Total wait time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minWait, avgWait, maxWait))
-		print "Average CPU utilization: %.3f%%" % (sum(cpuUse)/float(time * 4) * 100)
-		print "Average CPU utilization per process:"
-		for process in storedQueue:
-			print "process ID %d: %.3f%%" %(process.pNum , process.totalCPUTime/float(time * 4) * 100)
-			
+		if storedQueue:
+			for process in storedQueue:
+				for processtime in process.turnaroundTimes:
+					if processtime < minTurn:
+						minTurn = processtime
+					if processtime > maxTurn:
+						maxTurn = processtime
+					avgTurn += processtime
+				for processtime in process.waitTimes:
+					if processtime < minWait:
+						minWait = processtime
+					if processtime > maxWait:
+						maxWait = processtime
+					avgWait += processtime
+			avgTurn /= float(bursts*len(storedQueue))
+			avgWait /= float(bursts*len(storedQueue))
+			print ("Turnaround time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minTurn, avgTurn, maxTurn))
+			print ("Total wait time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minWait, avgWait, maxWait))
+			print "Average CPU utilization: %.3f%%" % (sum(cpuUse)/float(time * numcores) * 100)
+			print "Average CPU utilization per process:"
+			for process in storedQueue:
+				print "process ID %d: %.3f%%" %(process.pNum , process.totalCPUTime/float(time * numcores) * 100)
+				
 		
 
 def RoundRobin(timeSlice, readyQueue):
@@ -631,46 +635,56 @@ def RoundRobin(timeSlice, readyQueue):
 				p.waitTime+=1
 				p.turnaroundTime += 1
 
-
-		minTurn = storedQueue[0].turnaroundTimes[0]
-		maxTurn = storedQueue[0].turnaroundTimes[0]
-		avgTurn = 0
-		minWait = storedQueue[0].waitTimes[0]
-		maxWait = storedQueue[0].waitTimes[0]
-		avgWait = 0
-		for process in storedQueue:
-			for processtime in process.turnaroundTimes:
-				if time < minTurn:
-					minTurn = processtime
-				if processtime > maxTurn:
-					maxTurn = processtime
-				avgTurn += processtime
-			for processtime in process.waitTimes:
-				if processtime < minWait:
-					minWait = processtime
-				if processtime > maxWait:
-					maxWait = processtime
-				avgWait += processtime
-		avgTurn /= float(bursts*len(storedQueue))
-		avgWait /= float(bursts*len(storedQueue))
-		print ("Turnaround time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minTurn, avgTurn, maxTurn))
-		print ("Total wait time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minWait, avgWait, maxWait))
-		print "Average CPU utilization: %.3f%%" % (sum(cpuUse)/float(time * 4) * 100)
-		print "Average CPU utilization per process:"
-		for process in storedQueue:
-			print "process ID %d: %.3f%%" %(process.pNum , process.totalCPUTime/float(time * 4) * 100)
+		if cpuBound > 0:
+			minTurn = storedQueue[0].turnaroundTimes[0]
+			maxTurn = storedQueue[0].turnaroundTimes[0]
+			avgTurn = 0
+			minWait = storedQueue[0].waitTimes[0]
+			maxWait = storedQueue[0].waitTimes[0]
+			avgWait = 0
+			for process in storedQueue:
+				for processtime in process.turnaroundTimes:
+					if time < minTurn:
+						minTurn = processtime
+					if processtime > maxTurn:
+						maxTurn = processtime
+					avgTurn += processtime
+				for processtime in process.waitTimes:
+					if processtime < minWait:
+						minWait = processtime
+					if processtime > maxWait:
+						maxWait = processtime
+					avgWait += processtime
+			avgTurn /= float(bursts*len(storedQueue))
+			avgWait /= float(bursts*len(storedQueue))
+			print ("Turnaround time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minTurn, avgTurn, maxTurn))
+			print ("Total wait time: min %.3f ms; avg %.3f ms; max %.3f ms" % (minWait, avgWait, maxWait))
+			print "Average CPU utilization: %.3f%%" % (sum(cpuUse)/float(time * numcores) * 100)
+			print "Average CPU utilization per process:"
+			for process in storedQueue:
+				print "process ID %d: %.3f%%" %(process.pNum , process.totalCPUTime/float(time * numcores) * 100)
 
 if __name__ == '__main__':
+	#arguments are number of processes, number of cores, timeslice for RR
 	n = 12
 	numcores = 4
 	processes = []
-	cores = [None for i in range(0,numcores) ]
+	
 	time = 0
 	cpuBound = 0
-	bursts = 20
+	bursts = 8
+	timeslice = 100
+
+	if len(sys.argv) != 1:
+		if len(sys.argv) >= 2 and sys.argv[1] and int(sys.argv[1]) >= 1:
+			n = int(sys.argv[1])
+		if len(sys.argv) >= 3 and sys.argv[2] and int(sys.argv[2]) >= 1:
+			numcores = int(sys.argv[2])
+		if len(sys.argv) >= 4 and sys.argv[3] and int(sys.argv[3]) >= 1:
+			timeslice = int(sys.argv[3])
 
 
-
+	cores = [None for i in range(0,numcores) ]
 	for i in range(1,n+1):
 		if i > n/3:
 			processes.append(Process(i, True, random.randint(20,200), random.randint(1000,4500), random.randint(0,4),bursts))
@@ -719,7 +733,7 @@ if __name__ == '__main__':
 	print "=================DOING RR==============="
 	cores = [None for i in range(0,numcores) ]
 
-	RoundRobin(100, copy.deepcopy(readyQueue)) 
+	RoundRobin(timeslice, copy.deepcopy(readyQueue)) 
 	print
 
 	time = 0
